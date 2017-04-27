@@ -61,6 +61,30 @@ open class WhisperView: UIView {
     setupFrames()
     clipsToBounds = true
   }
+    
+  init(height: CGFloat, attrMessage: AttributedMessage) {
+    self.height = height
+    self.whisperImages = attrMessage.images
+    super.init(frame: CGRect.zero)
+        
+    titleLabel.attributedText = attrMessage.attributedTitle
+    backgroundColor = attrMessage.backgroundColor
+        
+    if let images = whisperImages , images.count > 1 {
+        complementImageView.animationImages = images
+        complementImageView.animationDuration = 0.7
+        complementImageView.startAnimating()
+    } else {
+        complementImageView.image = whisperImages?.first
+    }
+        
+    frame = CGRect(x: 0, y: height, width: UIScreen.main.bounds.width, height: Dimensions.height)
+    for subview in transformViews { addSubview(subview) }
+        
+    titleLabel.sizeToFit()
+    setupFrames()
+    clipsToBounds = true
+  }
 
   public required init?(coder aDecoder: NSCoder) {
     fatalError("init(coder:) has not been implemented")

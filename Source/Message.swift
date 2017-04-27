@@ -1,4 +1,5 @@
 import UIKit
+import Foundation
 
 public struct Message {
 
@@ -13,6 +14,19 @@ public struct Message {
     self.backgroundColor = backgroundColor
     self.images = images
   }
+}
+
+public struct AttributedMessage {
+    
+    public var attributedTitle: NSAttributedString
+    public var backgroundColor: UIColor
+    public var images: [UIImage]?
+    
+    public init(attributedTitle: NSAttributedString, backgroundColor: UIColor = UIColor.lightGray, images: [UIImage]? = nil) {
+        self.attributedTitle = attributedTitle
+        self.backgroundColor = backgroundColor
+        self.images = images
+    }
 }
 
 public struct Announcement {

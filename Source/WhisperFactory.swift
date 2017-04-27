@@ -79,6 +79,50 @@ class WhisperFactory: NSObject {
     }
   }
 
+  func craft(_ attrMessage: AttributedMessage, navigationController: UINavigationController, action: WhisperAction) {
+    self.navigationController = navigationController
+    self.navigationController?.delegate = self
+    presentTimer.invalidate()
+        
+    var containsWhisper = false
+    for subview in navigationController.navigationBar.subviews {
+        if let whisper = subview as? WhisperView {
+            whisperView = whisper
+            containsWhisper = true
+            break
+        }
+    }
+        
+    if !containsWhisper {
+        whisperView = WhisperView(height: navigationController.navigationBar.frame.height, attrMessage: attrMessage)
+        whisperView.frame.size.height = 0
+        var maximumY = navigationController.navigationBar.frame.height
+            
+        whisperView.transformViews.forEach {
+            $0.frame.origin.y = -10
+            $0.alpha = 0
+        }
+            
+        for subview in navigationController.navigationBar.subviews {
+            if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
+        }
+            
+        whisperView.frame.origin.y = maximumY
+        navigationController.navigationBar.addSubview(whisperView)
+    }
+        
+    if containsWhisper {
+        changeView(attrMessage, action: action)
+    } else {
+        switch action {
+        case .present:
+            presentView()
+        case .show:
+            showView()
+        }
+    }
+  }
+
   func silentWhisper(_ controller: UINavigationController, after: TimeInterval) {
     self.navigationController = controller
     guard let navigationController = self.navigationController else { return }
@@ -156,6 +200,22 @@ class WhisperFactory: NSObject {
     presentTimer = Timer.scheduledTimer(timeInterval: AnimationTiming.movement * 1.1, target: self,
       selector: #selector(WhisperFactory.presentFired(_:)), userInfo: array, repeats: false)
   }
+    
+  func changeView(_ attrMessage: AttributedMessage, action: WhisperAction) {
+    presentTimer.invalidate()
+    delayTimer.invalidate()
+    hideView()
+    
+    let attributedTitle = attrMessage.attributedTitle
+    let backgroundColor = attrMessage.backgroundColor
+    let action = action.rawValue
+        
+    var array = ["attributedTitle": attributedTitle, "backgroundColor": backgroundColor, "action": action] as [String : Any]
+    if let images = attrMessage.images { array["images"] = images }
+        
+    presentTimer = Timer.scheduledTimer(timeInterval: AnimationTiming.movement * 1.1, target: self,
+                                            selector: #selector(WhisperFactory.presentFired(_:)), userInfo: array, repeats: false)
+  }
 
   func hideView() {
     moveControllerViews(false)
@@ -178,21 +238,35 @@ class WhisperFactory: NSObject {
   }
 
   func presentFired(_ timer: Timer) {
+    guard let userInfo = timer.userInfo as? [String : AnyObject] else {
+        return
+    }
+    
     guard let navigationController = self.navigationController,
-      let userInfo = timer.userInfo as? [String : AnyObject],
-      let title = userInfo["title"] as? String,
-      let textColor = userInfo["textColor"] as? UIColor,
-      let backgroundColor = userInfo["backgroundColor"] as? UIColor,
-      let actionString = userInfo["action"] as? String else { return }
+        let backgroundColor = userInfo["backgroundColor"] as? UIColor,
+        let actionString = userInfo["action"] as? String else { return }
+    
+    let attrTitle = userInfo["attributedTitle"] as? NSAttributedString
+    let title = userInfo["title"] as? String
+    let textColor = userInfo["textColor"] as? UIColor
+    
+    if attrTitle == nil && (title == nil || textColor == nil) {
+        return
+    }
 
     var images: [UIImage]? = nil
 
     if let imageArray = userInfo["images"] as? [UIImage]? { images = imageArray }
 
     let action = WhisperAction(rawValue: actionString)
-    let message = Message(title: title, textColor: textColor, backgroundColor: backgroundColor, images: images)
-
-    whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
+    
+    if let attrTitle = attrTitle {
+        let attributedMessage = AttributedMessage(attributedTitle: attrTitle, backgroundColor: backgroundColor, images: images)
+        whisperView = WhisperView(height: navigationController.navigationBar.frame.height, attrMessage: attributedMessage)
+    } else {
+        let message = Message(title: title!, textColor: textColor!, backgroundColor: backgroundColor, images: images)
+        whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
+    }
     navigationController.navigationBar.addSubview(whisperView)
     whisperView.frame.size.height = 0
 

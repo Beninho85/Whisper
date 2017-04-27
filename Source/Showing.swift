@@ -4,6 +4,10 @@ public func show(whisper message: Message, to: UINavigationController, action: W
   whisperFactory.craft(message, navigationController: to, action: action)
 }
 
+public func show(whisper attrMessage: AttributedMessage, to: UINavigationController, action: WhisperAction = .show) {
+    whisperFactory.craft(attrMessage, navigationController: to, action: action)
+}
+
 public func show(shout announcement: Announcement, to: UIViewController, completion: (() -> Void)? = nil) {
   shoutView.craft(announcement, to: to, completion: completion)
 }
